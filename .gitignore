@@ -23,3 +23,22 @@ go.work.sum
 
 # env file
 .env
+
+# Exclude Go binaries
+/jnb-relay
+
+# Exclude Go build cache
+/bin/
+/obj/
+
+# Exclude module dependencies
+/vendor/
+
+# tls cert files
+*.pem
+*.crt
+*.cert
+*.key
+
+# ide
+.idea/
