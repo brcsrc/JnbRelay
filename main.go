@@ -5,11 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"mime"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 )
 
@@ -107,6 +109,33 @@ func main() {
 		req.Header.Add("X-Forwarded-Host", req.Host)
 		req.Header.Add("X-Forwarded-Proto", req.URL.Scheme)
 		req.Header.Add("X-Real-IP", req.RemoteAddr)
+	}
+
+	// Fix MIME types based on file extension
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		// Get the request path
+		path := resp.Request.URL.Path
+
+		// Detect MIME type from file extension
+		ext := filepath.Ext(path)
+		if ext != "" {
+			correctMimeType := mime.TypeByExtension(ext)
+
+			// If we detected a MIME type, update the Content-Type header
+			if correctMimeType != "" {
+				currentContentType := resp.Header.Get("Content-Type")
+
+				// Only override if the current type is wrong or generic
+				if currentContentType == "" ||
+					currentContentType == "text/plain" ||
+					currentContentType == "application/octet-stream" {
+					resp.Header.Set("Content-Type", correctMimeType)
+					log.Printf("Fixed MIME type for %s: %s -> %s", path, currentContentType, correctMimeType)
+				}
+			}
+		}
+
+		return nil
 	}
 
 	// Add error handling
